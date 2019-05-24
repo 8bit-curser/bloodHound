@@ -67,15 +67,13 @@ call('clear', shell=True)
 
 def waiter():
     """Waiter prints while scanning."""
-    for i in range(MAX_PORT):
+    #  for i in range(MAX_PORT):
+    while MAX_DOTS == 10:
+        call('clear', shell=True)
         print('Scanning: ', end='', flush=True)
         for _ in range(MAX_DOTS):
             print('.', end='', flush=True)
-            sleep(0.1)
-        print('\n')
-        call('clear', shell=True)
-    print('\n')
-    call('clear', shell=True)
+            sleep(0.2)
 
 
 def connect(host, port, host_type, port_type):
@@ -115,10 +113,12 @@ if args.f:
     scan_type = 'full'
     start_new_thread(waiter, ())
     special_scans(MAX_PORT)
+    MAX_DOTS = 0
 elif args.c:
     scan_type = 'common'
     start_new_thread(waiter, ())
     special_scans(COMMON_PORTS)
+    MAX_DOTS = 0
 else:
     connect(args.h, int(args.p), h_type, p_type)
 
