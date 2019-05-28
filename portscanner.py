@@ -9,7 +9,11 @@ from subprocess import call
 from _thread import start_new_thread
 
 MAX_PORT = 65535
-COMMON_PORTS = 1023
+COMMON_PORTS = [
+    1, 5, 7, 18, 20, 21, 22, 23, 25, 29, 37, 42, 43, 49, 53, 69, 70, 79, 80,
+    103, 108, 109, 110, 115, 118, 119, 137, 139, 143, 150, 156, 161, 179, 190,
+    194, 197, 389, 396, 443, 444, 445, 458, 546, 547, 563, 569, 1080]
+
 MAX_DOTS = 10
 LOCALHOST = '127.0.0.1'
 
@@ -97,11 +101,14 @@ def connect(host, port, host_type, port_type):
         close.append((host, port, port_type_name))
 
 
-def special_scans(ports_amount):
+def special_scans(ports):
     """Given an amount of ports, analize if open or close.
-    :params ports_amount: (int) max amount of ports to analyze
+    :params ports_amount: (int/list) ports to analyze.
     """
-    for port in range(ports_amount):
+    if type(ports) == int:
+        ports = range(ports)
+
+    for port in ports:
         if args.pt == 'ALL':
             for ptype in PORT_TYPE.values():
                 connect(args.h, port, h_type, ptype)
