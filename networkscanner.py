@@ -9,32 +9,12 @@ from datetime import datetime as dt
 from threading import current_thread
 from subprocess import call
 
-from enum import IntEnum
-
 from _thread import start_new_thread
+from constants_ns import (ECHO_REPLY, ECHO_REQUEST, ICMP_DEFAULT_CODE,
+                          ICMP_HEADER_FORMAT, ICMP_TIME_FORMAT,
+                          IP_HEADER_FORMAT, MAX_DOTS, TIME_EXCEEDED)
 
-IP_HEADER_FORMAT = "!BBHHHBBHII"
-ICMP_HEADER_FORMAT = "!BBHHH"
-ICMP_TIME_FORMAT = "!d"
-FULL_RANGE = 255
-COMMON_RANGE = 20
-FINISH = True
-MAX_DOTS = 10
-
-IP_HEADER_FORMAT = "!BBHHHBBHII"
-ICMP_HEADER_FORMAT = "!BBHHH"
-ICMP_TIME_FORMAT = "!d"
-
-
-ICMP_DEFAULT_CODE = 0  # the code for ECHO_REPLY and ECHO_REQUEST
-ICMP_DEFAULT_CODE = 0  # the code for ECHO_REPLY and ECHO_REQUEST
-
-
-class IcmpType(IntEnum):
-    """Enum for Type in ICMP Header."""
-    ECHO_REPLY = 0
-    ECHO_REQUEST = 8
-    TIME_EXCEEDED = 11
+START = True
 
 
 def ones_comp_sum16(num1: int, num2: int) -> int:
@@ -48,7 +28,8 @@ def ones_comp_sum16(num1: int, num2: int) -> int:
 
     carry = 1 << 16
     result = num1 + num2
-    return result if result < carry else result + 1 - carry
+    result = result if result < carry else result + 1 - carry
+    return result
 
 
 def checksum(source: bytes) -> int:
@@ -64,10 +45,11 @@ def checksum(source: bytes) -> int:
     # the checksum
     if len(source) % 2:
         source += b'\x00'
-    sum = 0
+    sum_ = 0
     for i in range(0, len(source), 2):
-        sum = ones_comp_sum16(sum, (source[i + 1] << 8) + source[i])
-    return ~sum & 0xffff
+        sum_ = ones_comp_sum16(sum_, (source[i + 1] << 8) + source[i])
+    ret = ~sum_ & 0xffff
+    return ret
 
 
 def send_one_ping(
@@ -84,7 +66,7 @@ def send_one_ping(
     """
     pseudo_checksum = 0
     icmp_header = pack(
-        ICMP_HEADER_FORMAT, IcmpType.ECHO_REQUEST, ICMP_DEFAULT_CODE,
+        ICMP_HEADER_FORMAT, ECHO_REQUEST, ICMP_DEFAULT_CODE,
         pseudo_checksum, icmp_id, seq
     )
     padding = (
@@ -92,11 +74,10 @@ def send_one_ping(
     icmp_payload = pack(ICMP_TIME_FORMAT, time()) + padding.encode()
     real_checksum = checksum(icmp_header + icmp_payload)
     icmp_header = pack(
-        ICMP_HEADER_FORMAT, IcmpType.ECHO_REQUEST, ICMP_DEFAULT_CODE,
+        ICMP_HEADER_FORMAT, ECHO_REQUEST, ICMP_DEFAULT_CODE,
         htons(real_checksum), icmp_id, seq
     )  # Put real checksum into ICMP header.
     packet = icmp_header + icmp_payload
-    # addr = (ip, port). Port is 0 respectively the OS default
     # behavior will be used.
     sock.sendto(packet, (dest_addr, 0))
 
@@ -134,24 +115,14 @@ def receive_one_ping(
             ret = False
             break
         recv_data, addr = sock.recvfrom(1024)
-        icmp_header_raw, icmp_payload_raw =\
-            recv_data[icmp_header_slice], \
-            recv_data[icmp_header_slice.stop:]
+        icmp_header_raw = recv_data[icmp_header_slice]
         icmp_header = dict(
             zip(icmp_header_keys, unpack(ICMP_HEADER_FORMAT, icmp_header_raw)))
-        # TIME_EXCEEDED has no icmp_id and icmp_seq. Usually they are 0.
-        if icmp_header['type'] == IcmpType.TIME_EXCEEDED:
+        if icmp_header['type'] == TIME_EXCEEDED:
             ret = False
             break
-        # ECHO_REPLY should match the
         if icmp_header['id'] == icmp_id and icmp_header['seq'] == seq:
-            # filters out the ECHO_REQUEST itself.
-            if icmp_header['type'] == IcmpType.ECHO_REQUEST:
-                continue
-            if icmp_header['type'] == IcmpType.ECHO_REPLY:
-                unpack(
-                    ICMP_TIME_FORMAT,
-                    icmp_payload_raw[0:calcsize(ICMP_TIME_FORMAT)])[0]
+            if icmp_header['type'] == ECHO_REPLY:
                 break
     return ret
 
@@ -159,7 +130,7 @@ def receive_one_ping(
 def waiter():
     """Waiter prints while scanning."""
     call('clear', shell=True)
-    while FINISH:
+    while START:
         print('Scanning: ', end='', flush=True)
         for _ in range(MAX_DOTS):
             print('.', end='', flush=True)
@@ -167,9 +138,9 @@ def waiter():
         call('clear', shell=True)
 
 
-def main():
-    start_new_thread(waiter, ())
-    for end in range(range_):
+def pinger(range_):
+    #  start_new_thread(waiter, ())
+    for end in range(range_[0], range_[1]):
         host = '{}.{}'.format(my_network_template, str(end))
         # Generate a IPV4, RAW socket that can work with ICMP
         with socket(AF_INET, SOCK_RAW, IPPROTO_ICMP) as sock:
@@ -183,27 +154,31 @@ def main():
             if delay:
                 succ.append(host)
             sock.close()
-    FINISH = False
+    START = False
+
+
+if __name__ == '__main__':
+    succ = []
+    my_ip = gethostbyname(gethostname())
+    my_network_template = '.'.join(my_ip.split('.')[:3])
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--f', '-full', help='Full scan of 255 possibilties.',
+        action='store_true')
+    parser.add_argument(
+        '--r', '-range', help='Range of ips accesible, e.g: 100-125',
+        default='0-20'
+        )
+    args = parser.parse_args()
+    range_ = '0-255' if args.f else args.r
+    ranges = list(map(int, range_.split('-')))
+    before = dt.now()
+    pinger(ranges)
     after = dt.now()
     delta = after - before
     call('clear', shell=True)
     print('Scan took: {} seconds'.format(delta.seconds))
+    print('Your IP: {}'.format(my_ip))
+    succ.remove(my_ip)
     print('Nodes found:')
     pp(succ)
-
-
-if __name__ == '__main__':
-    my_ip = gethostbyname(gethostname())
-    my_network_template = '.'.join(my_ip.split('.')[:3])
-    succ = []
-    before = dt.now()
-    parser = ArgumentParser()
-    parser.add_argument(
-        '--f', '-full', help='Full scan of 255 possibilties',
-        action='store_true')
-    parser.add_argument(
-        '--c', '-common', help='Fast scan of 20 main possibilities',
-        action='store_true')
-    args = parser.parse_args()
-    range_ = 255 if args.f else 20
-    main()
