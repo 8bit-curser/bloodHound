@@ -78,7 +78,6 @@ def send_one_ping(
         htons(real_checksum), icmp_id, seq
     )  # Put real checksum into ICMP header.
     packet = icmp_header + icmp_payload
-    # behavior will be used.
     sock.sendto(packet, (dest_addr, 0))
 
 
@@ -142,9 +141,7 @@ def pinger(range_):
     start_new_thread(waiter, ())
     for end in range(range_[0], range_[1]):
         host = '{}.{}'.format(my_network_template, str(end))
-        # Generate a IPV4, RAW socket that can work with ICMP
         with socket(AF_INET, SOCK_RAW, IPPROTO_ICMP) as sock:
-            #  print('host: {}'.format(host))
             sock.setsockopt(SOL_IP, IP_TTL, 64)
             icmp_id = current_thread().ident % 0xFFFF
             send_one_ping(
@@ -155,6 +152,7 @@ def pinger(range_):
                 succ.append(host)
             sock.close()
     START = False
+    return START
 
 
 if __name__ == '__main__':
@@ -179,7 +177,7 @@ if __name__ == '__main__':
     pinger(ranges)
     after = dt.now()
     delta = after - before
-    #  call('clear', shell=True)
+    call('clear', shell=True)
     print('Scan took: {} seconds'.format(delta.seconds))
     print('Your IP: {}'.format(my_ip))
     succ.remove(my_ip)
