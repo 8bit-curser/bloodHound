@@ -139,7 +139,7 @@ def waiter():
 
 
 def pinger(range_):
-    #  start_new_thread(waiter, ())
+    start_new_thread(waiter, ())
     for end in range(range_[0], range_[1]):
         host = '{}.{}'.format(my_network_template, str(end))
         # Generate a IPV4, RAW socket that can work with ICMP
@@ -161,22 +161,25 @@ if __name__ == '__main__':
     succ = []
     my_ip = gethostbyname(gethostname())
     my_network_template = '.'.join(my_ip.split('.')[:3])
+    # Arguments catching
     parser = ArgumentParser()
     parser.add_argument(
         '--f', '-full', help='Full scan of 255 possibilties.',
         action='store_true')
     parser.add_argument(
-        '--r', '-range', help='Range of ips accesible, e.g: 100-125',
+        '--r', '-range', help='Range of IPS accesible, e.g: 100-125',
         default='0-20'
         )
+    # Parse arguments
     args = parser.parse_args()
     range_ = '0-255' if args.f else args.r
     ranges = list(map(int, range_.split('-')))
+    # Run and calculate time
     before = dt.now()
     pinger(ranges)
     after = dt.now()
     delta = after - before
-    call('clear', shell=True)
+    #  call('clear', shell=True)
     print('Scan took: {} seconds'.format(delta.seconds))
     print('Your IP: {}'.format(my_ip))
     succ.remove(my_ip)

@@ -1,81 +1,21 @@
 from time import sleep
 from pprint import pprint as pp
-from socket import (AF_INET, AF_INET6, SOCK_DGRAM, SOCK_STREAM, error,
-                    gaierror, socket)
+from socket import error, gaierror, socket
 from argparse import ArgumentParser
 from datetime import datetime
 from subprocess import call
 
 from _thread import start_new_thread
-
-MAX_PORT = 65535
-COMMON_PORTS = [
-    1, 5, 7, 18, 20, 21, 22, 23, 25, 29, 37, 42, 43, 49, 53, 69, 70, 79, 80,
-    103, 108, 109, 110, 115, 118, 119, 137, 139, 143, 150, 156, 161, 179, 190,
-    194, 197, 389, 396, 443, 444, 445, 458, 546, 547, 563, 569, 1080]
-
-MAX_DOTS = 10
-LOCALHOST = '127.0.0.1'
-
-PORT_TYPE = {
-    'TCP': SOCK_STREAM,
-    'UDP': SOCK_DGRAM,
-}
-
-HOST_TYPE = {
-    'IPV4': AF_INET,
-    'IPV6': AF_INET6,
-}
-
-scan_type = 'specific'
-start = datetime.now()
-
-parser = ArgumentParser()
-
-parser.add_argument(
-    '--h', '-host', help='Host to be looked on, e.g. 127.0.0.1',
-    default=LOCALHOST
-    )
-
-parser.add_argument(
-    '--p', '-port', help='Specify the port number to look on, e.g 80',
-    default=0
-    )
-
-parser.add_argument(
-    '--pt', '-porttype', help='Specify the port type e.g ALL, TCP, UDP',
-    default='TCP'
-    )
-
-parser.add_argument(
-    '--ht', '-hosttype', help='Specify the host type e.g ALL, IPV4, IPV6',
-    default='IPV4'
-    )
-
-parser.add_argument(
-    '--f', '-full', help='Initialize a full scan', action='store_true'
-    )
-
-parser.add_argument(
-    '--c', '-common', help='Initialize a common scan', action='store_true'
-    )
-args = parser.parse_args()
-
-p_type = PORT_TYPE.get(args.pt)
-h_type = HOST_TYPE.get(args.ht)
-opened = []
-close = []
-
-call('clear', shell=True)
+from constants_ps import (COMMON_PORTS, HOST_TYPE, LOCALHOST, MAX_DOTS,
+                          MAX_PORT, PORT_TYPE)
 
 
 def waiter():
     """Waiter prints while scanning."""
-    #  for i in range(MAX_PORT):
-    while MAX_DOTS == 10:
+    while dots == 10:
         call('clear', shell=True)
         print('Scanning: ', end='', flush=True)
-        for _ in range(MAX_DOTS):
+        for _ in range(dots):
             print('.', end='', flush=True)
             sleep(0.2)
 
@@ -116,27 +56,59 @@ def special_scans(ports):
             connect(args.h, port, h_type, p_type)
 
 
-if args.f:
-    scan_type = 'full'
-    start_new_thread(waiter, ())
-    special_scans(MAX_PORT)
-    MAX_DOTS = 0
-elif args.c:
-    scan_type = 'common'
-    start_new_thread(waiter, ())
-    special_scans(COMMON_PORTS)
-    MAX_DOTS = 0
-else:
-    connect(args.h, int(args.p), h_type, p_type)
+if __name__ == '__main__':
+    dots = MAX_DOTS
+    scan_type = 'specific'
+    start = datetime.now()
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--h', '-host', help='Host to be looked on, e.g. 127.0.0.1',
+        default=LOCALHOST
+        )
+    parser.add_argument(
+        '--p', '-port', help='Specify the port number to look on, e.g 80',
+        default=0
+        )
+    parser.add_argument(
+        '--pt', '-porttype', help='Specify the port type e.g ALL, TCP, UDP',
+        default='TCP'
+        )
+    parser.add_argument(
+        '--ht', '-hosttype', help='Specify the host type e.g ALL, IPV4, IPV6',
+        default='IPV4'
+        )
+    parser.add_argument(
+        '--f', '-full', help='Initialize a full scan', action='store_true'
+        )
+    parser.add_argument(
+        '--c', '-common', help='Initialize a common scan', action='store_true'
+        )
+    args = parser.parse_args()
+    p_type = PORT_TYPE.get(args.pt)
+    h_type = HOST_TYPE.get(args.ht)
+    opened = []
+    close = []
+    call('clear', shell=True)
+    if args.f:
+        scan_type = 'full'
+        start_new_thread(waiter, ())
+        special_scans(MAX_PORT)
+        dots = 0
+    elif args.c:
+        scan_type = 'common'
+        start_new_thread(waiter, ())
+        special_scans(COMMON_PORTS)
+        dots = 0
+    else:
+        connect(args.h, int(args.p), h_type, p_type)
 
-end = datetime.now()
-delta = end - start
-
-call('clear', shell=True)
-print('Scan type: {}'.format(scan_type))
-print('Scan took: {} seconds'.format(delta.seconds))
-print('Open:')
-print('== Amount of open ports: {}'.format(len(opened)))
-pp(opened)
-print('\nClosed:')
-print('== Amount of close ports: {}'.format(len(close)))
+    end = datetime.now()
+    delta = end - start
+    call('clear', shell=True)
+    print('Scan type: {}'.format(scan_type))
+    print('Scan took: {} seconds'.format(delta.seconds))
+    print('Open:')
+    print('== Amount of open ports: {}'.format(len(opened)))
+    pp(opened)
+    print('\nClosed:')
+    print('== Amount of close ports: {}'.format(len(close)))
