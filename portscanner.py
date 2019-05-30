@@ -41,7 +41,7 @@ def connect(host, port, host_type, port_type):
         close.append((host, port, port_type_name))
 
 
-def special_scans(ports):
+def special_scans(host, ports, h_type, p_type):
     """Given an amount of ports, analize if open or close.
     :params ports_amount: (int/list) ports to analyze.
     """
@@ -49,11 +49,19 @@ def special_scans(ports):
         ports = range(ports)
 
     for port in ports:
-        if args.pt == 'ALL':
-            for ptype in PORT_TYPE.values():
-                connect(args.h, port, h_type, ptype)
+        if h_type == 'ALL':
+            for hvalue in HOST_TYPE.values():
+                if p_type == 'ALL':
+                    for ptype in PORT_TYPE.values():
+                        connect(host, port, hvalue, ptype)
+                else:
+                    connect(host, port, hvalue, p_type)
         else:
-            connect(args.h, port, h_type, p_type)
+            if p_type == 'ALL':
+                for ptype in PORT_TYPE.values():
+                    connect(host, port, h_type, ptype)
+            else:
+                connect(host, port, h_type, p_type)
 
 
 if __name__ == '__main__':
@@ -84,26 +92,40 @@ if __name__ == '__main__':
         '--c', '-common', help='Initialize a common scan', action='store_true'
         )
     args = parser.parse_args()
-    p_type = PORT_TYPE.get(args.pt)
-    h_type = HOST_TYPE.get(args.ht)
+    p_type = PORT_TYPE.get(args.pt, 'ALL')
+    h_type = HOST_TYPE.get(args.ht, 'ALL')
     opened = []
     close = []
     call('clear', shell=True)
     if args.f:
         scan_type = 'full'
         start_new_thread(waiter, ())
-        special_scans(MAX_PORT)
+        special_scans(args.h, MAX_PORT, h_type, p_type)
         dots = 0
     elif args.c:
         scan_type = 'common'
-        start_new_thread(waiter, ())
-        special_scans(COMMON_PORTS)
+        #  start_new_thread(waiter, ())
+        special_scans(args.h, COMMON_PORTS, h_type, p_type)
         dots = 0
     else:
-        connect(args.h, int(args.p), h_type, p_type)
+        if h_type == 'ALL':
+            for hvalue in HOST_TYPE.values():
+                if p_type == 'ALL':
+                    for pvalue in PORT_TYPE.values():
+                        connect(args.h, int(args.p), hvalue, pvalue)
+                else:
+                    connect(args.h, int(args.p), hvalue, p_type)
+        else:
+            if p_type == 'ALL':
+                for pvalue in PORT_TYPE.values():
+                    connect(args.h, int(args.p), h_type, pvalue)
+            else:
+                connect(args.h, int(args.p), h_type, p_type)
 
     end = datetime.now()
     delta = end - start
+    opened = list(set(opened))
+    close = list(set(close))
     call('clear', shell=True)
     print('Scan type: {}'.format(scan_type))
     print('Scan took: {} seconds'.format(delta.seconds))
