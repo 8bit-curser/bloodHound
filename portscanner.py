@@ -41,9 +41,13 @@ def connect(host, port, host_type, port_type):
         close.append((host, port, port_type_name))
 
 
-def special_scans(host, ports, h_type, p_type, special=False):
+def scans(host, ports, h_type, p_type, special=False):
     """Given an amount of ports, analize if open or close.
-    :params ports_amount: (int/list) ports to analyze.
+    :params ports: (int/list) ports to analyze.
+    :host: (str) host ip or domain.
+    :h_type: (str) 'ALL' 'IPV4' 'IPV6'.
+    :p_type: (str) 'ALL' 'TCP' 'UDP'.
+    :special: (bool) If it is not a common or a full scan.
     """
     if not special:
         if type(ports) == int:
@@ -103,15 +107,15 @@ if __name__ == '__main__':
     if args.f:
         scan_type = 'full'
         start_new_thread(waiter, ())
-        special_scans(args.h, MAX_PORT, h_type, p_type)
+        scans(args.h, MAX_PORT, h_type, p_type)
         dots = 0
     elif args.c:
         scan_type = 'common'
-        #  start_new_thread(waiter, ())
-        special_scans(args.h, COMMON_PORTS, h_type, p_type)
+        start_new_thread(waiter, ())
+        scans(args.h, COMMON_PORTS, h_type, p_type)
         dots = 0
     else:
-        special_scans(args.h, args.p, h_type, p_type, True)
+        scans(args.h, args.p, h_type, p_type, True)
 
     end = datetime.now()
     delta = end - start
