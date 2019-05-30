@@ -41,19 +41,21 @@ def connect(host, port, host_type, port_type):
         close.append((host, port, port_type_name))
 
 
-def scans(host, ports, h_type, p_type, special=False):
+def scans(host: str, ports: int, h_type: str, p_type: str, type_: str):
     """Given an amount of ports, analize if open or close.
     :params ports: (int/list) ports to analyze.
-    :host: (str) host ip or domain.
-    :h_type: (str) 'ALL' 'IPV4' 'IPV6'.
-    :p_type: (str) 'ALL' 'TCP' 'UDP'.
-    :special: (bool) If it is not a common or a full scan.
+    :host: host ip or domain.
+    :ports: port to test default 0.
+    :h_type: 'ALL' 'IPV4' 'IPV6'.
+    :p_type: 'ALL' 'TCP' 'UDP'.
+    :type_: special, common, full.
     """
-    if not special:
-        if type(ports) == int:
-            ports = range(ports)
-    else:
+    if type_ == 'special':
         ports = [ports]
+    elif type_ == 'full':
+        ports = range(MAX_PORT)
+    else:
+        ports = COMMON_PORTS
 
     for port in ports:
         if h_type == 'ALL':
@@ -103,23 +105,22 @@ if __name__ == '__main__':
     h_type = HOST_TYPE.get(args.ht, 'ALL')
     opened = []
     close = []
-    call('clear', shell=True)
+
     if args.f:
         scan_type = 'full'
-        start_new_thread(waiter, ())
-        scans(args.h, MAX_PORT, h_type, p_type)
-        dots = 0
     elif args.c:
         scan_type = 'common'
-        start_new_thread(waiter, ())
-        scans(args.h, COMMON_PORTS, h_type, p_type)
-        dots = 0
     else:
-        scans(args.h, args.p, h_type, p_type, True)
+        scan_type = 'special'
 
+    call('clear', shell=True)
+    start_new_thread(waiter, ())
+    scans(args.h, args.p, h_type, p_type, scan_type)
+    dots = 0
     end = datetime.now()
     delta = end - start
     opened = list(set(opened))
+    opened.sort(key=lambda x: x[1])
     close = list(set(close))
     call('clear', shell=True)
     print('Scan type: {}'.format(scan_type))
