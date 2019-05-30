@@ -41,12 +41,15 @@ def connect(host, port, host_type, port_type):
         close.append((host, port, port_type_name))
 
 
-def special_scans(host, ports, h_type, p_type):
+def special_scans(host, ports, h_type, p_type, special=False):
     """Given an amount of ports, analize if open or close.
     :params ports_amount: (int/list) ports to analyze.
     """
-    if type(ports) == int:
-        ports = range(ports)
+    if not special:
+        if type(ports) == int:
+            ports = range(ports)
+    else:
+        ports = [ports]
 
     for port in ports:
         if h_type == 'ALL':
@@ -108,19 +111,7 @@ if __name__ == '__main__':
         special_scans(args.h, COMMON_PORTS, h_type, p_type)
         dots = 0
     else:
-        if h_type == 'ALL':
-            for hvalue in HOST_TYPE.values():
-                if p_type == 'ALL':
-                    for pvalue in PORT_TYPE.values():
-                        connect(args.h, int(args.p), hvalue, pvalue)
-                else:
-                    connect(args.h, int(args.p), hvalue, p_type)
-        else:
-            if p_type == 'ALL':
-                for pvalue in PORT_TYPE.values():
-                    connect(args.h, int(args.p), h_type, pvalue)
-            else:
-                connect(args.h, int(args.p), h_type, p_type)
+        special_scans(args.h, args.p, h_type, p_type, True)
 
     end = datetime.now()
     delta = end - start
