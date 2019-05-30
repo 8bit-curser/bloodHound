@@ -20,3 +20,4 @@ Python3 tool to simulate the basic functions of a tool such as `nmap` in network
 - [ ] Definitely a more robust logic on the networkscanner (currently works only on OSX).
 - [ ] Provide linux support for the networkscanner.
 - [ ] PDF reports for the results.
+- [ ] Rewrite everything in python37 style.
