@@ -30,7 +30,7 @@ def connect(host, port, host_type, port_type):
     port_type_name = [k for k, v in PORT_TYPE.items() if v == port_type][0]
     try:
         s = socket(host_type, port_type)
-        s.connect((host, port))
+        s.connect((host, int(port)))
         s.close()
         opened.append((host, port, port_type_name))
     except gaierror:
