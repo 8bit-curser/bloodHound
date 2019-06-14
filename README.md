@@ -16,7 +16,7 @@ Python3 tool to simulate the basic functions of a tool such as `nmap` in network
 ## Things that will be added
 
 - [ ] Rewrite everything in python37 style.
-- [ ] Thread support to deliver a faster scan
+- [ ] Thread support to deliver a faster scan both on network and port.
 - [ ] Extend support for other types of ports at the portscanner.
 - [ ] Tests for both portscanner and networkscanner.
 - [ ] Definitely a more robust logic on the networkscanner (currently works only on OSX).
@@ -24,4 +24,8 @@ Python3 tool to simulate the basic functions of a tool such as `nmap` in network
 - [ ] Provide Windows support for network and port scanners
 - [ ] API interface to have a more visual interaction.
 - [ ] PDF reports for the results.
-- [ ] Provide a kind of library that could be used using pip to cover common needs. 
+- [ ] Provide a kind of library that could be used using pip to cover common needs.
+- [ ] Monitor traffic on the devices connected to the network.
+- [ ] Monitor traffict on a certain port. 
+- [ ] Obtain insight on the current network.
+
